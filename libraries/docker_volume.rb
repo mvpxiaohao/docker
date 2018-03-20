@@ -1,5 +1,9 @@
+require_relative 'docker_common_properties'
+
 module DockerCookbook
-  class DockerVolume < DockerBase
+  class DockerVolume < Chef::Resource
+    include DockerCookbook::DockerCommonProperties
+
     resource_name :docker_volume
 
     property :driver, String, desired_state: false

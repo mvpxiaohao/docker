@@ -1,5 +1,9 @@
+require_relative 'docker_common_properties'
+
 module DockerCookbook
-  class DockerRegistry < DockerBase
+  class DockerRegistry < Chef::Resource
+    include DockerCookbook::DockerCommonProperties
+
     resource_name :docker_registry
 
     property :email, String

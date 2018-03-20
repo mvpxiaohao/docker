@@ -1,5 +1,9 @@
+require_relative 'docker_common_properties'
+
 module DockerCookbook
-  class DockerImage < DockerBase
+  class DockerImage < Chef::Resource
+    include DockerCookbook::DockerCommonProperties
+
     resource_name :docker_image
 
     # Modify the default of read_timeout from 60 to 120

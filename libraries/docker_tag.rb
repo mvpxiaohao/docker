@@ -1,5 +1,9 @@
+require_relative 'docker_common_properties'
+
 module DockerCookbook
-  class DockerTag < DockerBase
+  class DockerTag < Chef::Resource
+    include DockerCookbook::DockerCommonProperties
+
     resource_name :docker_tag
 
     property :target_repo, String, name_property: true

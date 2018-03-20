@@ -1,5 +1,9 @@
+require_relative 'docker_common_properties'
+
 module DockerCookbook
-  class DockerContainer < DockerBase
+  class DockerContainer < Chef::Resource
+    include DockerCookbook::DockerCommonProperties
+
     resource_name :docker_container
 
     property :container_name, String, name_property: true
@@ -21,17 +25,17 @@ module DockerCookbook
     property :dns_search, Array, default: []
     property :domain_name, String, default: ''
     property :entrypoint, [Array, String, nil], coerce: proc { |v| v.nil? ? nil : ::Shellwords.shellwords(v) }
-    property :env, UnorderedArrayType, default: []
+    property :env, [UnorderedArray, nil], default: [], coerce: proc { |v| v.nil? ? nil : UnorderedArray.new(Array(v)) }
     property :env_file, [Array, String], coerce: proc { |v| coerce_env_file(v) }, default: [], desired_state: false
     property :extra_hosts, [Array, nil], coerce: proc { |v| Array(v).empty? ? nil : Array(v) }
-    property :exposed_ports, PartialHashType, default: {}
+    property :exposed_ports, [PartialHash, nil], default: {}, coerce: proc { |v| v.nil? ? nil : PartialHash[v] }
     property :force, [TrueClass, FalseClass], default: false, desired_state: false
     property :host, [String, nil], default: lazy { ENV['DOCKER_HOST'] }, desired_state: false
     property :hostname, String
     property :ipc_mode, String, default: ''
     property :kernel_memory, [String, Integer], coerce: proc { |v| coerce_to_bytes(v) }, default: 0
     property :labels, [String, Array, Hash], default: {}, coerce: proc { |v| coerce_labels(v) }
-    property :links, UnorderedArrayType, coerce: proc { |v| coerce_links(v) }
+    property :links, [UnorderedArray, nil], coerce: proc { |v| v.nil? ? nil : UnorderedArray.new(Array(v)) }
     property :log_driver, %w( json-file syslog journald gelf fluentd awslogs splunk etwlogs gcplogs none ), default: 'json-file', desired_state: false
     property :log_opts, [Hash, nil], coerce: proc { |v| coerce_log_opts(v) }, desired_state: false
     property :init, [TrueClass, FalseClass, nil]
@@ -48,7 +52,7 @@ module DockerCookbook
     property :oom_score_adj, Integer, default: -500
     property :open_stdin, [TrueClass, FalseClass], default: false, desired_state: false
     property :outfile, String
-    property :port_bindings, PartialHashType, default: {}
+    property :port_bindings, [PartialHash, nil], default: {}, coerce: proc { |v| v.nil? ? nil : PartialHash[v] }
     property :pid_mode, String, default: ''
     property :privileged, [TrueClass, FalseClass], default: false
     property :publish_all_ports, [TrueClass, FalseClass], default: false
@@ -67,7 +71,7 @@ module DockerCookbook
     property :user, String, default: ''
     property :userns_mode, String, default: ''
     property :uts_mode, String, default: ''
-    property :volumes, PartialHashType, default: {}, coerce: proc { |v| coerce_volumes(v) }
+    property :volumes, [PartialHash, nil], default: {}, coerce: proc { |v| v.nil? ? nil : PartialHash[v] }
     property :volumes_from, [String, Array], coerce: proc { |v| v.nil? ? nil : Array(v) }
     property :volume_driver, String
     property :working_dir, String, default: ''
@@ -109,22 +113,6 @@ module DockerCookbook
         Array(v).each_with_object({}) do |label, h|
           parts = label.split(':')
           h[parts[0]] = parts[1..-1].join(':')
-        end
-      end
-    end
-
-    def coerce_links(v)
-      case v
-      when DockerBase::UnorderedArray, nil
-        v
-      else
-        return nil if v.empty?
-        # Parse docker input of /source:/container_name/dest into source:dest
-        DockerBase::UnorderedArray.new(Array(v)).map! do |link|
-          if link =~ %r{^/(?<source>.+):/#{name}/(?<dest>.+)}
-            link = "#{Regexp.last_match[:source]}:#{Regexp.last_match[:dest]}"
-          end
-          link
         end
       end
     end
@@ -185,26 +173,6 @@ module DockerCookbook
       Array(v).map do |u|
         u = "#{u['Name']}=#{u['Soft']}:#{u['Hard']}" if u.is_a?(Hash)
         u
-      end
-    end
-
-    def coerce_volumes(v)
-      case v
-      when DockerBase::PartialHash, nil
-        v
-      when Hash
-        DockerBase::PartialHash[v]
-      else
-        b = []
-        v = Array(v).to_a # in case v.is_A?(Chef::Node::ImmutableArray)
-        v.delete_if do |x|
-          parts = x.split(':')
-          b << x if parts.length > 1
-        end
-        b = nil if b.empty?
-        volumes_binds b
-        return DockerBase::PartialHash.new if v.empty?
-        v.each_with_object(DockerBase::PartialHash.new) { |volume, h| h[volume] = {} }
       end
     end
 

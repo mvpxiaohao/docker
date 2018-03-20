@@ -1,5 +1,9 @@
+require_relative 'docker_common_properties'
+
 module DockerCookbook
-  class DockerExec < DockerBase
+  class DockerExec < Chef::Resource
+    include DockerCookbook::DockerCommonProperties
+
     resource_name :docker_exec
 
     property :host, [String, nil], default: lazy { ENV['DOCKER_HOST'] }, desired_state: false

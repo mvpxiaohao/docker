@@ -1,11 +1,15 @@
+require_relative 'docker_common_properties'
+
 module DockerCookbook
-  class DockerNetwork < DockerBase
+  class DockerNetwork < Chef::Resource
+    include DockerCookbook::DockerCommonProperties
+
     resource_name :docker_network
 
     property :auxiliary_addresses, [String, Array, nil], coerce: proc { |v| coerce_auxiliary_addresses(v) }
     property :container, String, desired_state: false
     property :driver, String
-    property :driver_opts, PartialHashType
+    property :driver_opts, [PartialHash, nil], coerce: proc { |v| v.nil? ? nil : PartialHash[v] }
     property :enable_ipv6, [TrueClass, FalseClass]
     property :gateway, [String, Array, nil], coerce: proc { |v| coerce_gateway(v) }
     property :host, [String, nil], default: lazy { ENV['DOCKER_HOST'] }, desired_state: false
