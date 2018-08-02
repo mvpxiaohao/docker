@@ -92,15 +92,3 @@ Policyfile.lock.json
 CONTRIBUTING*
 CHANGELOG*
 TESTING*
-
-# Strainer #
-############
-Colanderfile
-Strainerfile
-.colander
-.strainer
-
-# Vagrant #
-###########
-.vagrant
-Vagrantfile
